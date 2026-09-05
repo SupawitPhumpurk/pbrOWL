@@ -61,7 +61,7 @@
         lightHelperMesh.position.copy(directionalLight.position);
         scene.add(lightHelperMesh);
 
-        const gui = new lil.GUI({ title: '☀️ Light Settings' });
+        const gui = new lil.GUI({ title: 'PBR Controller' });
         const lightFolder = gui.addFolder('Directional Light');
         lightFolder.add(directionalLight.position, 'x', -10, 10, 0.1).name('Position X').listen();
         lightFolder.add(directionalLight.position, 'y', 0, 15, 0.1).name('Position Y').listen();
