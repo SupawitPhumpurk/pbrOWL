@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Materials</title>
+    <title>Materials  Owl</title>
     <style>
         body {
             margin: 0;
@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/EXRLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
     
-    <!-- เพิ่ม DragControls และ lil-gui สำหรับปรับและลากแสง -->
+    <!-- DragControls และ lil-gui -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/DragControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.18"></script>
 
@@ -61,21 +61,62 @@
         lightHelperMesh.position.copy(directionalLight.position);
         scene.add(lightHelperMesh);
 
-        const gui = new lil.GUI({ title: 'PBR Controller' });
-        const lightFolder = gui.addFolder('Directional Light');
+        const gui = new lil.GUI({ title: '⚙️ Controls' });
+
+        const lightFolder = gui.addFolder('PBR Controller');
         lightFolder.add(directionalLight.position, 'x', -10, 10, 0.1).name('Position X').listen();
         lightFolder.add(directionalLight.position, 'y', 0, 15, 0.1).name('Position Y').listen();
         lightFolder.add(directionalLight.position, 'z', -10, 10, 0.1).name('Position Z').listen();
         lightFolder.add(directionalLight, 'intensity', 0, 10, 0.1).name('Intensity');
-        lightFolder.addColor({ color: '#ffffff' }, 'color').name('Color').onChange((val) => {
-            directionalLight.color.set(val);
-        });
+        
 
         const dragControls = new THREE.DragControls([lightHelperMesh], camera, renderer.domElement);
         dragControls.addEventListener('dragstart', () => { controls.enabled = false; });
         dragControls.addEventListener('drag', (event) => { directionalLight.position.copy(event.object.position); });
         dragControls.addEventListener('dragend', () => { controls.enabled = true; });
         // ----------------------------------------------
+
+
+        function setupOwlGUI(model) {
+            const folder = gui.addFolder('Character Material');
+            const materials = [];
+
+            model.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    if (Array.isArray(child.material)) {
+                        materials.push(...child.material);
+                    } else {
+                        materials.push(child.material);
+                    }
+                }
+            });
+
+            if (materials.length === 0) return;
+
+            const params = {
+                color: '#' + (materials[0].color ? materials[0].color.getHexString() : 'ffffff'),
+                metalness: materials[0].metalness !== undefined ? materials[0].metalness : 0,
+                roughness: materials[0].roughness !== undefined ? materials[0].roughness : 0.5
+            };
+
+            folder.addColor(params, 'color').name('Base Color').onChange((val) => {
+                materials.forEach(mat => {
+                    if (mat.color) mat.color.set(val);
+                });
+            });
+
+            folder.add(params, 'metalness', 0, 1, 0.01).name('Metallic').onChange((val) => {
+                materials.forEach(mat => {
+                    if ('metalness' in mat) mat.metalness = val;
+                });
+            });
+
+            folder.add(params, 'roughness', 0, 1, 0.01).name('Roughness').onChange((val) => {
+                materials.forEach(mat => {
+                    if ('roughness' in mat) mat.roughness = val;
+                });
+            });
+        }
 
         const exrSkyboxUrl = 'https://dl.polyhaven.org/file/ph-assets/HDRIs/exr/1k/sunset_fairway_1k.exr';
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -114,28 +155,29 @@
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
         loader.setDRACOLoader(dracoLoader);
 
-        // --- โมเดลที่ 1: นกฮูก ---
+     
         const modelUrl = 'https://raw.githubusercontent.com/SupawitPhumpurk/pbrOWL/main/MYOWL.glb';
         loader.load(modelUrl, (gltf) => {
-            const model = gltf.scene;
+            const owlModel = gltf.scene;
 
-            model.traverse((child) => {
+            owlModel.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                 }
             });
 
-            model.position.set(0, 0.1, 0); 
-            model.scale.set(1, 1, 1);
+            owlModel.position.set(0, 0.1, 0); 
+            owlModel.scale.set(1, 1, 1);
 
-            scene.add(model);
+            scene.add(owlModel);
+            setupOwlGUI(owlModel); 
             console.log("โมเดลตัวที่ 1 (นกฮูก) ขึ้นแล้ว!");
         }, undefined, (error) => {
             console.error("เกิดข้อผิดพลาดในการโหลดโมเดลตัวที่ 1:", error);
         });
 
-        // --- โมเดลที่ 2: บ้านต้นไม้ ---
+   
         const secondModelUrl = 'https://raw.githubusercontent.com/SupawitPhumpurk/pbrOWL/main/treehouse.glb';
         loader.load(secondModelUrl, (gltf) => {
             const secondModel = gltf.scene;
@@ -147,7 +189,7 @@
                 }
             });
 
-            secondModel.scale.set(0.2, 0.2, 0.2); 
+            secondModel.scale.set(0.25, 0.25, 0.25); 
             const box = new THREE.Box3().setFromObject(secondModel);
             
             secondModel.position.set(2, -box.min.y, -2.5);
@@ -158,7 +200,7 @@
             console.error("เกิดข้อผิดพลาดในการโหลดโมเดลตัวที่ 2:", error);
         });
 
-   
+  
         const flagModelUrl = 'https://raw.githubusercontent.com/SupawitPhumpurk/pbrOWL/main/onepiece.glb';
         loader.load(flagModelUrl, (gltf) => {
             const flagModel = gltf.scene;
